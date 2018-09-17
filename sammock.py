@@ -122,8 +122,8 @@ def create_files(reference, reads, ref_file_name, sam_file_name):
                    for idx, read in enumerate(reads)]
     sam_entries.sort(key=sam_sorter)
 
-    sam_rows = SAM_COL_DELIMITER.join(str(entry) for entry in sam_entries)
-    sam_body = SAM_ROW_DELIMITER.join(sam_rows)
+    sam_body = SAM_ROW_DELIMITER.join(SAM_COL_DELIMITER.join(
+        map(str, entry)) for entry in sam_entries)
 
     make_alignments_file(sam_body, len(real_reference), sam_file_name)
 
