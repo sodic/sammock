@@ -38,7 +38,8 @@ def check_legal_characters(lines):
     for row, line in enumerate(lines, 1):
         for col, char in enumerate(line, 1):
             assert is_valid(char), \
-                f"Found illegal character '{char}' (line: {row}, position: {col})"
+                f"Found illegal character '{char}' \
+                (line: {row}, position: {col})"
 
 
 def perform_checks(lines):
@@ -76,7 +77,7 @@ def make_sam_entry(index, read, reference):
     return (index, 0, "ref",
             read_offset + 1, DEFAULT_QUALITY,
             cigar(shifted_read, shifted_reference),
-            "*", 0, 0, real_read, "@"*len(real_read))
+            "*", 0, 0, real_read, "@" * len(real_read))
 
 
 def make_reference_file(ref_sequence, ref_file_name):
@@ -128,19 +129,24 @@ def create_files(reference, reads, ref_file_name, sam_file_name):
 
 
 def get_args():
-    parser = ArgumentParser(description="""Convert a symbolic alignment file 
+    parser = ArgumentParser(description="""Convert a symbolic alignment file
         into a SAM alignemnt file and a corresponding reference.""")
 
-    parser.add_argument("input_file",
-                        help="path to the input file with symbolic alignments.")
-    parser.add_argument("-r", "--reference",
-                        default="ref.fa",
-                        dest="ref_file_name",
-                        help="desired name of the generated reference sequence file.")
-    parser.add_argument("-a", "--alignments",
-                        default="alignments.sam",
-                        dest="sam_file_name",
-                        help="desired name of the generated alignments (sam) file.")
+    parser.add_argument(
+        "input_file",
+        help="path to the input file with symbolic alignments.")
+    parser.add_argument(
+        "-r",
+        "--reference",
+        default="ref.fa",
+        dest="ref_file_name",
+        help="desired name of the generated reference sequence file.")
+    parser.add_argument(
+        "-a",
+        "--alignments",
+        default="alignments.sam",
+        dest="sam_file_name",
+        help="desired name of the generated alignments (sam) file.")
 
     return parser.parse_args()
 

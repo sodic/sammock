@@ -9,6 +9,7 @@ class TestCigarFunctions(unittest.TestCase):
         self.assertEqual("M", mark_operation("A", "C"))
         self.assertEqual("I", mark_operation("A", "-"))
         self.assertEqual("D", mark_operation("-", "G"))
+        self.assertEqual(None, mark_operation("-", "-"))
 
     def test_cigar_mathces(self):
         self.assertEqual("5M", cigar("ACGCT", "ACGGT"))
