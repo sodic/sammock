@@ -1,5 +1,5 @@
 # sammock
-A simple program for generating [SAM](https://samtools.github.io/hts-specs/SAMv1.pdf) alignment files together with their corresponding reference [FASTA](https://en.wikipedia.org/wiki/FASTA_format) files using a visual (and hopefully intuitive) alignment description format. It tries to simplify the creation of arbitrary SAM files and make testing easier. 
+A simple program for generating [SAM](https://samtools.github.io/hts-specs/SAMv1.pdf) alignment files together with their corresponding reference [FASTA](https://en.wikipedia.org/wiki/FASTA_format) files using a visual (and hopefully intuitive) alignment description format. The goal is to simplify the creation of arbitrary SAM files and make testing easier. 
 
 ## 1. Dependencies
 - Python 3.6+
@@ -55,7 +55,7 @@ AACACGCCTTAAGT
 2	0	ref	7	60	1M2D2M1I2M	*	0	0	CTAAAG	@@@@@@
 ```
 
-**NOTE:** Following from the [specification](#31-specification), the same ouput would also be produced with the following input files:
+**NOTE:** Following from the [specification](#31-input-format-specification), the same ouput would also be produced with the following input files:
 ```
 AAAA-GCCTTACTAA
 ------C--TA--AAG
