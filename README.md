@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/sodic/sammock.svg?branch=master)](https://travis-ci.org/sodic/sammock)
+
 # sammock
 A simple program for generating [SAM](https://samtools.github.io/hts-specs/SAMv1.pdf) alignment files together with their corresponding reference [FASTA](https://en.wikipedia.org/wiki/FASTA_format) files using a visual (and hopefully intuitive) alignment description format. The goal is to simplify the creation of arbitrary SAM files and make testing easier. 
 
