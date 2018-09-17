@@ -9,6 +9,6 @@ sam_file="$2"
 bam_file=$(echo "$sam_file" | sed -E -e 's/(.*)\..*/\1/').bam
 ref_file="$3"
 
-python3 createSample.py "$descriptor_file" --sam "$sam_file" --reference "$ref_file"
+python3 sammock.py "$descriptor_file" --alignments "$sam_file" --reference "$ref_file"
 samtools view -Sb "$sam_file" > "$bam_file"
 samtools index "$bam_file"
