@@ -74,7 +74,7 @@ or
 etc.
 
 ## 4. Additional
-You can use the `prepareSample` bash script to fully automate the process of creating `FASTA` and `SAM` files and creating the indices (a `BAM` file):
+You can use the `prepareSample` bash script to fully automate the process of creating `FASTA` and `SAM` files and creating the indices (a `BAM` file). However, this requires `samtools` to be installed/in scope:
 ```bash
 ./prepareSample <input_file_name> <sam_file_name> <ref_file_name>
 ```
