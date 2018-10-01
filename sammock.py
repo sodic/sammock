@@ -1,13 +1,16 @@
+#!/usr/bin/python3.6
 from argparse import ArgumentParser
 from itertools import dropwhile, groupby
+from re import compile
 
 BLANK_POSITION = "-"
 DEFAULT_QUALITY = 60
 DEFAULT_REF_NAME = "ref"
-VALID_CHARACTERS = set("ACGT").union(BLANK_POSITION)
+VALID_CHARACTERS = "ACGT" + BLANK_POSITION
 SAM_ROW_DELIMITER = "\n"
 SAM_COL_DELIMITER = "\t"
 SAM_VERSION_NUMBER = "1.4"
+LEGAL_READ_PATTERN = compile(r"([" + VALID_CHARACTERS + "](:[0-9]*){0,1}([\s]+|$))*")
 
 
 def is_valid(char):
@@ -26,25 +29,30 @@ def remove_all_blanks(sequence):
     return sequence.replace(BLANK_POSITION, "")
 
 
-def remove_whitespaces(lines):
-    return ["".join(line.split()) for line in lines if line.strip()]
+def remove_whitespaces(line):
+    return "".join(line.strip().split()) 
 
 
 def remove_trailing_blanks(sequence):
     return sequence.rstrip(BLANK_POSITION)
 
 
-def check_legal_characters(lines):
-    for row, line in enumerate(lines, 1):
-        for col, char in enumerate(line, 1):
-            assert is_valid(char), \
-                f"Found illegal character '{char}' \
-                (line: {row}, position: {col})"
+def is_legal_read(read_str):
+    return LEGAL_READ_PATTERN.match(read_str)
 
 
-def perform_checks(lines):
-    assert len(lines) >= 2, "Provide at least one read and a reference"
-    check_legal_characters(lines)
+def are_legal_reads(read_strs):
+    for index, read in enumerate(read_strs, 1):
+        if not is_legal_read(read):
+            raise ValueError(f"Illegal read on line number {index}.")
+
+
+def read_string(read_data):
+    return (base for base, _ in read_data)
+
+
+def read_quals(read_data):
+    return (quality for _, quality in read_data)
 
 
 def mark_operation(read_base, ref_base):
@@ -68,16 +76,20 @@ def cigar(read, ref):
     return "".join(cigar_entry(op, values) for op, values in grouper if op)
 
 
-def make_sam_entry(index, read, reference):
-    shifted_read = "".join(dropwhile(missing, read))
-    read_offset = len(read) - len(shifted_read)
-    shifted_reference = reference[read_offset:]
-    real_read = remove_all_blanks(shifted_read)
+def make_sam_entry(index, read_data, reference_string):
+    read_string, read_qualities = zip(*read_data)
+    read_qualities = [q for q in read_qualities if q]
+
+    shifted_read_string = "".join(dropwhile(missing, read_string))
+    read_offset = len(read_string) - len(shifted_read_string)
+    real_read_string = remove_all_blanks(shifted_read_string)
+
+    shifted_reference_string = reference_string[read_offset:]
 
     return (index, 0, "ref",
             read_offset + 1, DEFAULT_QUALITY,
-            cigar(shifted_read, shifted_reference),
-            "*", 0, 0, real_read, "@" * len(real_read))
+            cigar(shifted_read_string, shifted_reference_string),
+            "*", 0, 0, real_read_string, "".join(chr(q + 33) for q in read_qualities))
 
 
 def make_reference_file(ref_sequence, ref_file_name):
@@ -114,12 +126,29 @@ def sam_sorter(entry):
     return entry[2], entry[3]
 
 
+def make_base_info(string):
+    info = string.split(":")
+    base = info[0]
+
+    if missing(base):
+        quality = None
+    elif len(info) == 2:
+        quality = info[1]
+    else:
+        quality = DEFAULT_QUALITY
+
+    return base, int(quality)
+    
+
 def create_files(reference, reads, ref_file_name, sam_file_name):
     real_reference = remove_all_blanks(reference)
     make_reference_file(real_reference, ref_file_name)
+   
+    reads_data = [[make_base_info(base_str) for base_str in read.split()]
+            for read in reads]
 
-    sam_entries = [make_sam_entry(idx + 1, read, reference)
-                   for idx, read in enumerate(reads)]
+    sam_entries = [make_sam_entry(idx + 1, read_data, reference)
+                   for idx, read_data in enumerate(reads_data)]
     sam_entries.sort(key=sam_sorter)
 
     sam_body = SAM_ROW_DELIMITER.join(SAM_COL_DELIMITER.join(
@@ -159,15 +188,18 @@ def main():
 
     with open(input_file_name) as file:
         lines = file.readlines()
+    
+    assert len(lines) >= 2, "Provide at least one read and a reference"
 
-    lines = remove_whitespaces(lines)
-    sequence_strings = [remove_trailing_blanks(l) for l in lines]
-    check_legal_characters(sequence_strings)
+    sequence_strings = [line.strip() for line in lines]
 
-    reference = sequence_strings.pop()
+    reference_string = remove_whitespaces(
+            remove_trailing_blanks(sequence_strings.pop()))
+    
     reads = sequence_strings
+    are_legal_reads(reads)
 
-    create_files(reference, reads, ref_file_name, sam_file_name)
+    create_files(reference_string, reads, ref_file_name, sam_file_name)
 
 
 if __name__ == "__main__":
