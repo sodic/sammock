@@ -6,15 +6,12 @@ from re import compile
 BLANK_POSITION = "-"
 DEFAULT_QUALITY = 60
 DEFAULT_REF_NAME = "ref"
-VALID_CHARACTERS = "ACGT" + BLANK_POSITION
+VALID_CHARACTERS = "ACGT"
+BLANK_POSITION = "-"
 SAM_ROW_DELIMITER = "\n"
 SAM_COL_DELIMITER = "\t"
 SAM_VERSION_NUMBER = "1.4"
-LEGAL_READ_PATTERN = compile(r"([" + VALID_CHARACTERS + "](:[0-9]*){0,1}([\s]+|$))*")
-
-
-def is_valid(char):
-    return char in VALID_CHARACTERS
+LEGAL_READ_PATTERN = compile(r"(([" + VALID_CHARACTERS + "](:[0-9]*){0,1}|\-)([\s]+|$))*")
 
 
 def present(base):
@@ -41,7 +38,7 @@ def is_legal_read(read_str):
     return LEGAL_READ_PATTERN.match(read_str)
 
 
-def are_legal_reads(read_strs):
+def check_legal_reads(read_strs):
     for index, read in enumerate(read_strs, 1):
         if not is_legal_read(read):
             raise ValueError(f"Illegal read on line number {index}.")
@@ -128,14 +125,9 @@ def sam_sorter(entry):
 
 def make_base_info(string):
     info = string.split(":")
-    base = info[0]
 
-    if missing(base):
-        quality = None
-    elif len(info) == 2:
-        quality = info[1]
-    else:
-        quality = DEFAULT_QUALITY
+    base = info[0]
+    quality = info[1] if len(info) == 2 else DEFAULT_QUALITY
 
     return base, int(quality)
     
@@ -193,11 +185,11 @@ def main():
 
     sequence_strings = [line.strip() for line in lines]
 
-    reference_string = remove_whitespaces(
-            remove_trailing_blanks(sequence_strings.pop()))
+    reference_string = remove_trailing_blanks(
+            remove_whitespaces(sequence_strings.pop()))
     
     reads = sequence_strings
-    are_legal_reads(reads)
+    check_legal_reads(reads)
 
     create_files(reference_string, reads, ref_file_name, sam_file_name)
 
