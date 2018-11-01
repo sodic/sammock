@@ -25,19 +25,21 @@ This is the specification of the symbolic alignment format which the program exp
 - Each non empty row represents one sequence.
 - The file must contain at least two sequences (one read and a reference).
 - The reference is always considered to be the last sequence in the file.
-- Each sequence consists of symbols denoting the bases, allowed symbols are `A`, `C`, `G`, `T` and `-` which denotes a 'missing base'.
-- Spaces between bases are ignored and can be used to enhance readability (e.g. `A C - C T` instead of `AC-CT`).
-- An index of a base is determined by the number of non-whitespace characters preceding it.
-- The reference sequence must not start with a 'missing base' symbol
-- Preceding 'missing bases' on a read determine its starting position wrt. the reference (e.g. read `---ACG` starts at position `4` of the reference, one-indexed as in the SAM format)
-- Trailing 'missing bases' and are removed from the sequence.
+- Each read consists of symbols denoting the bases, allowed symbols are `A`, `C`, `G`, `T` and `-` which denotes a 'missing base'. The bases must be delimited by one or more spaces.
+- Base qualities are specified after a colon following the base value, like this: `A:45 C:23 G:54 T:12`. One read may or may not contain base qualities. However, if it does, a quality must be specified for every non missing base of the read.
+- The reference sequence must not start with a 'missing base' symbol.
+- The reference sequence must not contain base qualities.
+- Preceding 'missing bases' on a read determine its starting position wrt. the reference (e.g. read `- - - A C G` starts at position `4` of the reference, one-indexed as in the SAM format).
+- Trailing 'missing bases' are truncated from both the reads and the reference.
 
 ### 3.2. Example
 Specify the input file, e.g. `sample.txt` with the following content:
 ```
-A  A  A  A  -  G  C  C  T  T  A  C  T  A  A 
--  -  -  -  -  -  C  -  -  T  A  -  -  A  A  G
-A  A  C  A  C  G  C  C  T  T  A  -  -  -  A  G  T
+A:42  A:42  A:42  A:42  -     G:43  C:45  C:42  T:44  T:44  A:43  -     -     A:42  A:43
+-     -     -     -     -     -     C:24  -     -     T:25  A:26  -     -     A:27  A:28  G:29
+A     A     A     A     -     G     C     C     T     T     A     C     T     A     A
+
+A     A     C     A     C     G     C     C     T     T     A     -     -     -     A     G      T
 ```
 Run the program:
 ```bash
@@ -53,25 +55,19 @@ AACACGCCTTAAGT
 ```
 @HD	VN:1.4	SO:coordinate
 @SQ	SN:ref	LN:14
-1	0	ref	1	60	4M1D6M3I1M	*	0	0	AAAAGCCTTACTAA	@@@@@@@@@@@@@@
-2	0	ref	7	60	1M2D2M1I2M	*	0	0	CTAAAG	@@@@@@
+1	0	ref	1	60	4M1D6M1I1M	*	0	0	AAAAGCCTTAAA	KKKKLNKMMLKL
+3	0	ref	1	60	4M1D6M3I1M	*	0	0	AAAAGCCTTACTAA	*
+2	0	ref	7	60	1M2D2M1I2M	*	0	0	CTAAAG	9:;<=>
 ```
 
-**NOTE:** Following from [the specification](#31-input-format-specification), the same ouput would also be produced with the following input files:
+**NOTE:** Spaces can be added to increase readibility. Sequence bases don't need to be aligned for the program to work. Following from [the specification](#31-input-format-specification), the same ouput would also be produced with this (much less readable) input file:
 ```
-AAAA-GCCTTACTAA
-------C--TA--AAG
-AACACGCCTTA---AGT
+A:42  A:42  A:42  A:42  -           G:43  C:45  C:42  T:44  T:44  A:43  -     -     A:42  A:43
+- - - - - - C:24 - - T:25 A:26 - - A:27 A:28 G:29
+A A A A - G C C T T A C T A A
+
+A A C A C G C C T T A - - - A G T
 ```
-or
-```
- A   A   A   A   -   G   C   C   T   T   A   C   T   A   A   -   -  -
- 
- -   -   -   -   -   -   C   -   -   T   A   -   -   A   A   G   -  -
- 
- A   A   C   A   C   G   C   C   T   T   A   -   -   -   A   G   T  -
-```
-etc.
 
 ## 4. Additional
 You can use the `prepareSample` bash script to fully automate the process of creating `FASTA` and `SAM` files and creating the indices (a `BAM` file). However, this requires `samtools` to be installed/in scope:
