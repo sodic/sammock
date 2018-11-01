@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/sodic/sammock.svg?branch=master)](https://travis-ci.org/sodic/sammock)
+
 # sammock
 A simple program for generating [SAM](https://samtools.github.io/hts-specs/SAMv1.pdf) alignment files together with their corresponding reference [FASTA](https://en.wikipedia.org/wiki/FASTA_format) files using a visual (and hopefully intuitive) alignment description format. The goal is to simplify the creation of arbitrary SAM files and make testing easier. 
 
@@ -5,7 +7,7 @@ A simple program for generating [SAM](https://samtools.github.io/hts-specs/SAMv1
 - Python 3.6+
 
 ## 2. Installation
-The program comes a single _Python3_ module. You can either <a href="sammock.py" download>download only the required file</a>  or clone the entire repository:
+The program comes as a single _Python3_ module. You can either <a href="sammock.py" download>download only the required file</a>  or clone the entire repository:
 ```bash
 git clone https://github.com/sodic/sammock.git
 ```
@@ -55,7 +57,7 @@ AACACGCCTTAAGT
 2	0	ref	7	60	1M2D2M1I2M	*	0	0	CTAAAG	@@@@@@
 ```
 
-**NOTE:** Following from the [specification](#31-input-format-specification), the same ouput would also be produced with the following input files:
+**NOTE:** Following from [the specification](#31-input-format-specification), the same ouput would also be produced with the following input files:
 ```
 AAAA-GCCTTACTAA
 ------C--TA--AAG
@@ -72,7 +74,7 @@ or
 etc.
 
 ## 4. Additional
-You can use the `prepareSample` bash script to fully automate the process of creating `FASTA` and `SAM` files and creating the indices (a `BAM` file):
+You can use the `prepareSample` bash script to fully automate the process of creating `FASTA` and `SAM` files and creating the indices (a `BAM` file). However, this requires `samtools` to be installed/in scope:
 ```bash
 ./prepareSample <input_file_name> <sam_file_name> <ref_file_name>
 ```
