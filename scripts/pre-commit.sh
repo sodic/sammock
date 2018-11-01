@@ -2,7 +2,6 @@
 STASH_NAME="pre-commit-$(date +%s)"
 git stash save -q --keep-index $STASH_NAME
 
-# Test prospective commit
 echo 'Running tests...'
 python3 -m unittest test_sammock.py
 if [ $? -ne 0 ]; then
