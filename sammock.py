@@ -1,53 +1,59 @@
+#!/usr/bin/python3.6
 from argparse import ArgumentParser
 from itertools import dropwhile, groupby
+from re import compile
+from typing import Pattern, List, Iterable, Tuple, Optional
 
-BLANK_POSITION = "-"
-DEFAULT_QUALITY = 60
-DEFAULT_REF_NAME = "ref"
-VALID_CHARACTERS = set("ACGT").union(BLANK_POSITION)
-SAM_ROW_DELIMITER = "\n"
-SAM_COL_DELIMITER = "\t"
-SAM_VERSION_NUMBER = "1.4"
+BaseInfo = Tuple[str, Optional[int]]
+SamEntry = Tuple[int, int, str, int, int, str, str, int, int, str, str]
+
+BLANK_POSITION: str = "-"
+DEFAULT_QUALITY: int = 60
+DEFAULT_REF_NAME: str = "ref"
+
+SAM_ROW_DELIMITER: str = "\n"
+SAM_COL_DELIMITER: str = "\t"
+SAM_VERSION_NUMBER: str = "1.4"
+
+VALID_CHARACTERS: str = "ACGT"
+SPACES_OR_LINE_END = r"[\s]+|$"
+READ_WITH_QUALITIES = fr"(([{VALID_CHARACTERS}]:[0-9]+|-)({SPACES_OR_LINE_END}))+\Z"
+READ_WITHOUT_QUALITIES = fr"(([{VALID_CHARACTERS}]|-)({SPACES_OR_LINE_END}))+\Z"
+LEGAL_READ = f"({READ_WITH_QUALITIES})|({READ_WITHOUT_QUALITIES})"
+LEGAL_READ_PATTERN: Pattern[str] = compile(LEGAL_READ)
 
 
-def is_valid(char):
-    return char in VALID_CHARACTERS
-
-
-def present(base):
+def present(base: str) -> bool:
     return base != BLANK_POSITION
 
 
-def missing(base):
+def missing(base: str) -> bool:
     return not present(base)
 
 
-def remove_all_blanks(sequence):
+def remove_all_blanks(sequence: str) -> str:
     return sequence.replace(BLANK_POSITION, "")
 
 
-def remove_whitespaces(lines):
-    return ["".join(line.split()) for line in lines if line.strip()]
+def remove_whitespaces(line: str) -> str:
+    return "".join(line.strip().split())
 
 
-def remove_trailing_blanks(sequence):
+def remove_trailing_blanks(sequence: str) -> str:
     return sequence.rstrip(BLANK_POSITION)
 
 
-def check_legal_characters(lines):
-    for row, line in enumerate(lines, 1):
-        for col, char in enumerate(line, 1):
-            assert is_valid(char), \
-                f"Found illegal character '{char}' \
-                (line: {row}, position: {col})"
+def is_legal_read(read: str) -> bool:
+    return bool(LEGAL_READ_PATTERN.match(read))
 
 
-def perform_checks(lines):
-    assert len(lines) >= 2, "Provide at least one read and a reference"
-    check_legal_characters(lines)
+def check_legal_reads(read_strs: Iterable[str]) -> None:
+    for index, read in enumerate(read_strs, 1):
+        if not is_legal_read(read):
+            raise ValueError(f"Illegal read on line number {index}.")
 
 
-def mark_operation(read_base, ref_base):
+def mark_operation(read_base: str, ref_base: str) -> Optional[str]:
     if missing(read_base) and missing(ref_base):
         return None
     elif missing(read_base) and present(ref_base):
@@ -58,74 +64,123 @@ def mark_operation(read_base, ref_base):
         return "M"
 
 
-def cigar_entry(operation, iterator):
+def cigar_entry(operation: str, iterator: Iterable) -> str:
     return str(sum(1 for _ in iterator)) + operation
 
 
-def cigar(read, ref):
+def cigar(read: str, ref: str) -> str:
     operations = (mark_operation(*bases) for bases in zip(read, ref))
     grouper = groupby(op for op in operations if op)
     return "".join(cigar_entry(op, values) for op, values in grouper if op)
 
 
-def make_sam_entry(index, read, reference):
-    shifted_read = "".join(dropwhile(missing, read))
-    read_offset = len(read) - len(shifted_read)
-    shifted_reference = reference[read_offset:]
+def quality_string(qualities: List[int]) -> str:
+    result = "".join(chr(q + 33) for q in qualities if q is not None)
+    return result if result else "*"
+
+
+def value_and_qual_strings(read: List[BaseInfo]) -> Tuple[str, str]:
+    read_str, read_qualities = zip(*read)
+    return "".join(read_str).rstrip(BLANK_POSITION), \
+           quality_string(read_qualities)
+
+
+def make_sam_entry(index: int,
+                   read: List[BaseInfo],
+                   reference: str) -> SamEntry:
+    read_str, qual_str = value_and_qual_strings(read)
+
+    shifted_read = "".join(dropwhile(missing, read_str))
+    read_offset = len(read_str) - len(shifted_read)
     real_read = remove_all_blanks(shifted_read)
 
-    return (index, 0, "ref",
-            read_offset + 1, DEFAULT_QUALITY,
+    shifted_reference = reference[read_offset:]
+
+    return (index, 0, "ref", read_offset + 1, DEFAULT_QUALITY,
             cigar(shifted_read, shifted_reference),
-            "*", 0, 0, real_read, "@" * len(real_read))
+            "*", 0, 0, real_read, qual_str)
 
 
-def make_reference_file(ref_sequence, ref_file_name):
-    with open(ref_file_name, "w") as ref_file:
-        ref_file.write(f">{DEFAULT_REF_NAME}\n")
-        ref_file.write(ref_sequence)
-        ref_file.write("\n")
+def write_file(content: str, file_name: str) -> None:
+    with open(file_name, "w") as file:
+        file.write(content)
 
 
-def make_sam_header(ref_length):
-    SAM_HEADER_R1 = SAM_COL_DELIMITER.join([
+def make_sam_header(ref_length: int) -> str:
+    sam_header_r1 = SAM_COL_DELIMITER.join([
         "@HD",
         f"VN:{SAM_VERSION_NUMBER}",
         "SO:coordinate"
     ])
-    SAM_HEADER_R2 = SAM_COL_DELIMITER.join([
+    sam_header_r2 = SAM_COL_DELIMITER.join([
         "@SQ",
         f"SN:{DEFAULT_REF_NAME}",
         f"LN:{ref_length}"
     ])
-    return SAM_ROW_DELIMITER.join([SAM_HEADER_R1, SAM_HEADER_R2])
+    return SAM_ROW_DELIMITER.join([sam_header_r1, sam_header_r2])
 
 
-def make_alignments_file(sam_body, ref_length, sam_file_name):
-    sam_header = make_sam_header(ref_length)
-
-    with open(sam_file_name, "w") as sam_file:
-        sam_file.write(sam_header)
-        sam_file.write(SAM_ROW_DELIMITER)
-        sam_file.write(sam_body)
-
-
-def sam_sorter(entry):
+def sam_sorter(entry: SamEntry) -> Tuple[str, int]:
     return entry[2], entry[3]
 
 
-def create_files(reference, reads, ref_file_name, sam_file_name):
+def parse_base(string: str) -> BaseInfo:
+    info = string.split(":")
+
+    base = info[0]
+    quality = int(info[1]) if len(info) == 2 else None
+
+    return base, quality
+
+
+def parse_read(read: str) -> List[BaseInfo]:
+    return [parse_base(base_str) for base_str in read.split()]
+
+
+def make_sam_body(entries: List[SamEntry]) -> str:
+    return SAM_ROW_DELIMITER.join(SAM_COL_DELIMITER.join(
+        map(str, entry)) for entry in entries)
+
+
+def make_fasta_string(reference: str) -> str:
+    return f">{DEFAULT_REF_NAME}\n{reference}\n"
+
+
+def make_sam_string(reference: str, reads: List[str]) -> str:
     real_reference = remove_all_blanks(reference)
-    make_reference_file(real_reference, ref_file_name)
+    reads = [parse_read(read) for read in reads]
 
     sam_entries = [make_sam_entry(idx + 1, read, reference)
                    for idx, read in enumerate(reads)]
     sam_entries.sort(key=sam_sorter)
 
-    sam_body = SAM_ROW_DELIMITER.join(SAM_COL_DELIMITER.join(
-        map(str, entry)) for entry in sam_entries)
+    sam_body = make_sam_body(sam_entries)
+    sam_header = make_sam_header(len(real_reference))
 
-    make_alignments_file(sam_body, len(real_reference), sam_file_name)
+    return SAM_ROW_DELIMITER.join([sam_header, sam_body])
+
+
+def sammock(input_str: str) -> Tuple[str, str]:
+    lines = input_str.split("\n")
+
+    # we are ignoring empty lines
+    lines = (line.strip() for line in lines)
+    sequences = [line for line in lines if len(line) > 0]
+
+    assert len(sequences) >= 2, "Provide at least one read and a reference"
+
+    reference = remove_trailing_blanks(remove_whitespaces(sequences.pop()))
+    real_reference = remove_all_blanks(reference)
+
+    reads = sequences
+    check_legal_reads(reads)
+
+    return make_fasta_string(real_reference), make_sam_string(reference, reads)
+
+
+def read_file(input_file_name):
+    with open(input_file_name) as file:
+        return file.read()
 
 
 def get_args():
@@ -133,7 +188,7 @@ def get_args():
         into a SAM alignemnt file and a corresponding reference.""")
 
     parser.add_argument(
-        "input_file",
+        "input_file_name",
         help="path to the input file with symbolic alignments.")
     parser.add_argument(
         "-r",
@@ -151,24 +206,15 @@ def get_args():
     return parser.parse_args()
 
 
-def main():
-    args = get_args()
-    input_file_name = args.input_file
-    ref_file_name = args.ref_file_name
-    sam_file_name = args.sam_file_name
+def main(input_file_name, ref_file_name, sam_file_name):
+    input_file_content = read_file(input_file_name)
 
-    with open(input_file_name) as file:
-        lines = file.readlines()
+    ref_file_content, sam_file_content = sammock(input_file_content)
 
-    lines = remove_whitespaces(lines)
-    sequence_strings = [remove_trailing_blanks(l) for l in lines]
-    check_legal_characters(sequence_strings)
-
-    reference = sequence_strings.pop()
-    reads = sequence_strings
-
-    create_files(reference, reads, ref_file_name, sam_file_name)
+    write_file(sam_file_content, sam_file_name)
+    write_file(ref_file_content, ref_file_name)
 
 
 if __name__ == "__main__":
-    main()
+    args = get_args()
+    main(args.input_file_name, args.ref_file_name, args.sam_file_name)
