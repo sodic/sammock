@@ -13,7 +13,7 @@ git clone https://github.com/sodic/sammock.git
 ```
 Position yourself in the same directory as the _sammock.py_ file and use _Python3.6+_ to run the program:
 ```bash
-python3.6 sammock.py --help
+python3 sammock.py --help
 ```
 ## 3. Usage
 The program reads data form an input text file describing alignments between multiple reads and a single reference sequence in a symbolic, human-readable way. It then produces a `FASTA` file containg the reference sequence and a (properly sorted) `SAM` file containing the alignment information. It can be used to quickly create aligment toy samples and simplify testing. Run `python3.6 sammock.py --help` for information about the command line parameters and their default values.
