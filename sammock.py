@@ -75,15 +75,13 @@ def cigar(read: str, ref: str) -> str:
 
 
 def quality_string(qualities: List[int]) -> str:
-    if all(q is not None for q in qualities):
-        return "".join(chr(q + 33) for q in qualities)
-    else:
-        return "*"
+    result = "".join(chr(q + 33) for q in qualities if q is not None)
+    return result if result else "*"
 
 
 def value_and_qual_strings(read: List[BaseInfo]) -> Tuple[str, str]:
     read_str, read_qualities = zip(*read)
-    return "".join(read_str).rstrip(BLANK_POSITION),\
+    return "".join(read_str).rstrip(BLANK_POSITION), \
            quality_string(read_qualities)
 
 

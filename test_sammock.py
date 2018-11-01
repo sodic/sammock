@@ -61,6 +61,8 @@ class TestStringManipulations(unittest.TestCase):
         self.assertEqual((BLANK_POSITION, None), parse_base(BLANK_POSITION))
 
     def test_legal_reads_legals(self):
+        self.assertEqual(True,
+                         is_legal_read( "A:42 A:42 A:42 A:42 - G:43 C:45 C:42 T:44 T:44 A:43 - - A:42 A:43"))
         self.assertEqual(True, is_legal_read("A C - - G C G - T"))
         self.assertEqual(True, is_legal_read("A:30 C:40 - - G:52 C:21 G:34 - T:36"))
         self.assertEqual(True, is_legal_read("- A:30 C:40 - - G:52 C:21 G:34 - T:36 -"))
@@ -72,7 +74,7 @@ class TestStringManipulations(unittest.TestCase):
         self.assertEqual(False, is_legal_read("A:23 C:40 - - G:20 C:21 G - T:43"))
 
     def test_quality_string(self):
-        self.assertEqual("*", quality_string([23, None, 43, 52, 33]))
+        self.assertEqual("8LUB", quality_string([23, None, 43, 52, 33]))
         self.assertEqual("8NLUB", quality_string([23, 45, 43, 52, 33]))
 
     def test_parse_read(self):
