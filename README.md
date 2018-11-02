@@ -43,7 +43,7 @@ A     A     C     A     C     G     C     C     T     T     A     -     -     - 
 ```
 Run the program:
 ```bash
-python3.6 sammock.py --alignments alignments_file.sam --reference ref_file.fa
+python3 sammock.py --alignments alignments_file.sam --reference ref_file.fa
 ```
 This produces two files: 
 - `ref_file.fa` containing the full reference:
