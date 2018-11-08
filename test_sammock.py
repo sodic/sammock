@@ -67,7 +67,7 @@ class TestStringManipulations(unittest.TestCase):
         self.assertEqual(True, is_legal_read("A:30 C:40 - - G:52 C:21 G:34 - T:36"))
         self.assertEqual(True, is_legal_read("- A:30 C:40 - - G:52 C:21 G:34 - T:36 -"))
 
-    def test_legal_reads_illegal(self):
+    def test_legal_reads_illegals(self):
         self.assertEqual(False, is_legal_read("A C:40 - - G C G - T"))
         self.assertEqual(False, is_legal_read("A C - - G U G - T"))
         self.assertEqual(False, is_legal_read("A C -:32 - G C G - T"))
