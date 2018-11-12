@@ -85,18 +85,24 @@ def value_and_qual_strings(read: List[BaseInfo]) -> Tuple[str, str]:
            quality_string(read_qualities)
 
 
+def adjust_for_reference_blanks(read_offset: int, reference: str) -> int:
+    return read_offset - reference[:read_offset].count(BLANK_POSITION)
+
+
 def make_sam_entry(index: int,
                    read: List[BaseInfo],
                    reference: str) -> SamEntry:
     read_str, qual_str = value_and_qual_strings(read)
 
     shifted_read = "".join(dropwhile(missing, read_str))
-    read_offset = len(read_str) - len(shifted_read)
     real_read = remove_all_blanks(shifted_read)
+    read_offset = len(read_str) - len(shifted_read)
 
     shifted_reference = reference[read_offset:]
 
-    return (index, 0, "ref", read_offset + 1, DEFAULT_QUALITY,
+    real_offset = adjust_for_reference_blanks(read_offset, reference)
+
+    return (index, 0, "ref", real_offset + 1, DEFAULT_QUALITY,
             cigar(shifted_read, shifted_reference),
             "*", 0, 0, real_read, qual_str)
 
