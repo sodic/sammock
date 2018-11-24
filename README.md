@@ -7,7 +7,7 @@ A simple program for generating [SAM](https://samtools.github.io/hts-specs/SAMv1
 - Python 3.6+
 
 ## 2. Installation
-The program comes as a single _Python3_ module. You can either <a href="sammock.py" download>download only the required file</a>  or clone the entire repository:
+The program comes as a single _Python3_ module. You can either [dowload only the required file](sammock.py) or clone the entire repository:
 ```bash
 git clone https://github.com/sodic/sammock.git
 ```
@@ -68,6 +68,7 @@ A A A A - G C C T T A C T A A
 
 A A C A C G C C T T A - - - A G T
 ```
+For more example inputs and results, take a look in the directory [test](test).
 
 ## 4. Additional
 You can use the `prepareSample` bash script to fully automate the process of creating `FASTA` and `SAM` files and creating the indices (a `BAM` file). However, this requires `samtools` to be installed/in scope:
