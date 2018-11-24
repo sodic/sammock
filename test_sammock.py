@@ -98,7 +98,6 @@ class TestSammock(unittest.TestCase):
 
             content = read_file(os.path.join(abosulute, "input.txt"))
             fasta_acutal, sam_actual = sammock(content)
-            write_file(sam_actual, "test.sam")
 
             self.assertEqual(fasta_expected, fasta_acutal)
             self.assertEqual(sam_expected, sam_actual)
